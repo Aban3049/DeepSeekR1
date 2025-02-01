@@ -1,5 +1,13 @@
 package com.abanapps.deepseek.r1
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -7,9 +15,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +31,8 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -47,16 +59,23 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.abanapps.deepseek.r1.data.utils.Utils
 import com.abanapps.deepseek.r1.domain.viewModel.MainViewModel
-import com.abanapps.deepseek.r1.presentation.colors.bgColor
+import com.abanapps.deepseek.r1.presentation.colors.bgColorDark
+import com.abanapps.deepseek.r1.presentation.colors.bgColorLight
+import com.abanapps.deepseek.r1.presentation.colors.darkChatCardColor
+import com.abanapps.deepseek.r1.presentation.colors.darkChatCardUser
+import com.abanapps.deepseek.r1.presentation.colors.drawerColorDark
+import com.abanapps.deepseek.r1.presentation.colors.drawerColorLight
+import com.abanapps.deepseek.r1.presentation.colors.iconsDarkColor
+import com.abanapps.deepseek.r1.presentation.colors.iconsLightColor
 import com.abanapps.deepseek.r1.presentation.state.ChatMessage
 import com.abanapps.deepseek.r1.presentation.utils.DarkModeSwitch
 import com.abanapps.deepseek.r1.presentation.utils.customFont
 import deepseekr1.composeapp.generated.resources.Res
 import deepseekr1.composeapp.generated.resources.ai_title
+import deepseekr1.composeapp.generated.resources.depeseek_logo
 import deepseekr1.composeapp.generated.resources.ic_chat
 import deepseekr1.composeapp.generated.resources.ic_message
 import deepseekr1.composeapp.generated.resources.ic_panel
-import deepseekr1.composeapp.generated.resources.ic_robot
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -80,6 +99,11 @@ fun App(viewModel: MainViewModel = koinViewModel()) {
 @Composable
 fun HomeScreen(viewModel: MainViewModel) {
 
+    val darkTheme by viewModel.themePreference.collectAsState()
+
+    val backgroundColor = (if (darkTheme) bgColorDark else bgColorLight)
+
+
     var prompt by remember {
         mutableStateOf("")
     }
@@ -100,10 +124,6 @@ fun HomeScreen(viewModel: MainViewModel) {
         mutableStateOf(Utils.models[0].first)
     }
 
-    var mode by remember {
-        mutableStateOf(false)
-    }
-
     var showChatHistoryColumn by remember {
         mutableStateOf(false)
     }
@@ -114,73 +134,184 @@ fun HomeScreen(viewModel: MainViewModel) {
 
 
     Scaffold(
-        containerColor = bgColor
+        containerColor = animateColorAsState(
+            targetValue = backgroundColor,
+            animationSpec = tween(1000),
+            label = "backgroundColor"
+        ).value
     ) { innerPadding ->
 
         Row(
             modifier = Modifier.fillMaxSize()
         ) {
 
-            if (showChatHistoryColumn) {
+            AnimatedVisibility(
+                visible = showChatHistoryColumn,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(0.3f)
+                    .background(if (darkTheme) drawerColorDark else drawerColorLight),
+                enter = slideInHorizontally(
+                    initialOffsetX = { -it },
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) + fadeIn(animationSpec = tween(500)),
 
-                Column(
-                    modifier = Modifier.fillMaxHeight().weight(.3f).background(Color(0xFFFFFDFD))
-                ) {
-
+                exit = slideOutHorizontally(
+                    targetOffsetX = { -it },
+                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(300))
+            ) {
+                Column {
                     Column(
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Spacer(modifier = Modifier.height(20.dp))
+
                         Row(
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             IconButton(onClick = {
-                                scope.launch {
-                                    showChatHistoryColumn = false
-                                }
+                                showChatHistoryColumn = false
                             }) {
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_panel),
-                                    contentDescription = "ic_panel"
+                                    contentDescription = "ic_panel",
+                                    tint = if (darkTheme) iconsDarkColor else iconsLightColor
                                 )
                             }
 
-                            IconButton(onClick = {
-                                scope.launch {
-                                    showChatHistoryColumn = false
-                                }
-                            }) {
+                            IconButton(onClick = {}) {
                                 Icon(
                                     imageVector = Icons.Outlined.Search,
-                                    contentDescription = "ic_panel"
+                                    contentDescription = "ic_panel",
+                                    tint = if (darkTheme) iconsDarkColor else iconsLightColor
                                 )
                             }
                         }
+
+                        Image(
+                            painter = painterResource(resource = Res.drawable.depeseek_logo),
+                            contentDescription = "deepseek_logo",
+                            modifier = Modifier
+                                .size(180.dp)
+                                .align(Alignment.CenterHorizontally)
+                        )
 
                         repeat(8) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            Card(
+                                onClick = {},
+                                colors = CardDefaults.cardColors(containerColor = if (darkTheme) darkChatCardColor else Color.White)
                             ) {
-                                Text(
-                                    "Write a programme in C++",
-                                    color = Color.Black,
-                                    fontFamily = customFont()
-                                )
-                                Icon(
-                                    imageVector = Icons.Filled.MoreVert,
-                                    contentDescription = "more"
-                                )
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text(
+                                        "Write a programme in C++",
+                                        fontFamily = customFont(),
+                                        modifier = Modifier.padding(6.dp),
+                                        color = if (darkTheme) Color.White else Color.Black,
+                                    )
+                                    Icon(
+                                        imageVector = Icons.Filled.MoreVert,
+                                        contentDescription = "more",
+                                        modifier = Modifier.padding(6.dp),
+                                        tint = if (darkTheme) Color.White else Color.Black,
+                                    )
+                                }
                             }
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                     }
-
-
                 }
-
             }
+
+
+//            AnimatedVisibility(
+//                visible = showChatHistoryColumn,
+//                modifier = Modifier.fillMaxHeight().weight(.3f).background(Color(0xFFFFFDFD))
+//            ) {
+//
+//                Column(
+//                    modifier = Modifier
+//                ) {
+//
+//                    Column(
+//                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+//                        horizontalAlignment = Alignment.CenterHorizontally
+//                    ) {
+//
+//                        Spacer(modifier = Modifier.height(20.dp))
+//
+//                        Row(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            verticalAlignment = Alignment.CenterVertically,
+//                            horizontalArrangement = Arrangement.SpaceBetween
+//                        ) {
+//                            IconButton(onClick = {
+//                                showChatHistoryColumn = false
+//                            }) {
+//                                Icon(
+//                                    painter = painterResource(Res.drawable.ic_panel),
+//                                    contentDescription = "ic_panel"
+//                                )
+//                            }
+//
+//                            IconButton(onClick = {
+//
+//                            }) {
+//                                Icon(
+//                                    imageVector = Icons.Outlined.Search,
+//                                    contentDescription = "ic_panel"
+//                                )
+//                            }
+//                        }
+//
+//                        Image(
+//                            painter = painterResource(resource = Res.drawable.depeseek_logo),
+//                            contentDescription = "deepseek_logo",
+//                            modifier = Modifier.size(180.dp).align(Alignment.CenterHorizontally)
+//                        )
+//
+//                        repeat(8) {
+//
+//                            Card(
+//                                onClick = {},
+//                                colors = CardDefaults.cardColors(containerColor = Color.White)
+//                            ) {
+//                                Row(
+//                                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+//                                    verticalAlignment = Alignment.CenterVertically,
+//                                    horizontalArrangement = Arrangement.SpaceBetween
+//                                ) {
+//                                    Text(
+//                                        "Write a programme in C++",
+//                                        color = Color.Black,
+//                                        fontFamily = customFont(),
+//                                        modifier = Modifier.padding(6.dp)
+//                                    )
+//                                    Icon(
+//                                        imageVector = Icons.Filled.MoreVert,
+//                                        contentDescription = "more",
+//                                        modifier = Modifier.padding(6.dp)
+//                                    )
+//                                }
+//                            }
+//
+//
+//                        }
+//                    }
+//
+//
+//                }
+//            }
+
 
             Column(
                 modifier = Modifier
@@ -213,7 +344,8 @@ fun HomeScreen(viewModel: MainViewModel) {
                             {
                                 Icon(
                                     painter = painterResource(Res.drawable.ic_panel),
-                                    contentDescription = "ic_panel"
+                                    contentDescription = "ic_panel",
+                                    tint = if (darkTheme) iconsDarkColor else iconsLightColor
                                 )
                             }
                         }
@@ -233,7 +365,8 @@ fun HomeScreen(viewModel: MainViewModel) {
                             }) {
                                 Icon(
                                     imageVector = Icons.Filled.KeyboardArrowDown,
-                                    contentDescription = "ic_arrow_down"
+                                    contentDescription = "ic_arrow_down",
+                                    tint = if (darkTheme) iconsDarkColor else iconsLightColor
                                 )
                             }
 
@@ -265,16 +398,16 @@ fun HomeScreen(viewModel: MainViewModel) {
 
                     DarkModeSwitch(
                         modifier = Modifier,
-                        checked = mode,
+                        checked = darkTheme,
                         onCheckedChanged = {
-                            mode = it
+                            viewModel.toggleTheme()
                         })
 
 
                 }
 
                 Image(
-                    painter = painterResource(resource = Res.drawable.ic_robot),
+                    painter = painterResource(resource = Res.drawable.depeseek_logo),
                     contentDescription = "ic_robot",
                     modifier = Modifier
                         .size(180.dp)
@@ -282,7 +415,7 @@ fun HomeScreen(viewModel: MainViewModel) {
 
                 Text(
                     org.jetbrains.compose.resources.stringResource(Res.string.ai_title),
-                    color = Color.Black,
+                    color = if (darkTheme) Color.White else Color.Black,
                     fontFamily = customFont(),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 22.sp,
@@ -299,7 +432,7 @@ fun HomeScreen(viewModel: MainViewModel) {
 
                         isLoading = it.isLoading
 
-                        ChatBubble(chat = it)
+                        ChatBubble(chat = it,darkTheme)
 
                     }
 
@@ -314,16 +447,16 @@ fun HomeScreen(viewModel: MainViewModel) {
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color.Black,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        unfocusedBorderColor = Color.Black
+                        focusedBorderColor = if (darkTheme) Color.White else Color.Black,
+                        focusedTextColor = if (darkTheme) Color.White else Color.Black,
+                        unfocusedTextColor = if (darkTheme) Color.White else Color.Black,
+                        unfocusedBorderColor = if (darkTheme) Color.White.copy(alpha = .7f) else Color.Black
                     ),
                     leadingIcon = {
                         Icon(
                             painter = painterResource(resource = Res.drawable.ic_message),
                             contentDescription = "ic_message",
-                            tint = Color.Black
+                            tint = if (darkTheme) iconsDarkColor else iconsLightColor
                         )
                     },
                     trailingIcon = {
@@ -335,7 +468,7 @@ fun HomeScreen(viewModel: MainViewModel) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "ic_snd",
-                                tint = Color.Black
+                                tint = if (darkTheme) iconsDarkColor else iconsLightColor
                             )
                         }
                     }
@@ -355,7 +488,7 @@ fun HomeScreen(viewModel: MainViewModel) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChatBubble(chat: ChatMessage) {
+fun ChatBubble(chat: ChatMessage,darkTheme:Boolean) {
 
     Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -370,11 +503,11 @@ fun ChatBubble(chat: ChatMessage) {
                 text = chat.userPrompt,
                 modifier = Modifier
                     .background(
-                        Color.LightGray.copy(alpha = 0.4f),
+                       if (darkTheme) darkChatCardColor else  Color.LightGray.copy(alpha = 0.4f),
                         shape = RoundedCornerShape(8.dp)
                     )
                     .padding(8.dp),
-                color = Color.Black,
+                color = if (darkTheme) Color.White else Color.Black,
                 fontFamily = customFont(),
             )
 
@@ -394,7 +527,7 @@ fun ChatBubble(chat: ChatMessage) {
                 FlowRow(
                     modifier = Modifier
                         .background(
-                            Color.White,
+                            if (darkTheme) darkChatCardUser else Color.LightGray.copy(alpha = 0.2f),
                             shape = RoundedCornerShape(8.dp)
                         )
                         .padding(8.dp)
@@ -402,7 +535,7 @@ fun ChatBubble(chat: ChatMessage) {
                     SelectionContainer {
                         Text(
                             text = chat.aiResponse ?: "Error: No response",
-                            color = Color.Black,
+                            color = if (darkTheme) Color.White else Color.Black,
                             fontFamily = customFont(),
                         )
                     }
