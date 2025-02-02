@@ -17,7 +17,7 @@ data class AiResponse(
     @SerialName("eval_duration")
     val evalDuration: Double?,
     @SerialName("load_duration")
-    val loadDuration: Int?,
+    val loadDuration: Double?,
     @SerialName("message")
     val message: Message?,
     @SerialName("model")

@@ -1,3 +1,4 @@
+import io.grpc.ExperimentalApi
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -13,6 +14,8 @@ plugins {
 }
 
 kotlin {
+
+
     androidTarget {
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_11)
@@ -67,6 +70,8 @@ kotlin {
             implementation(libs.androidx.room.runtime)
             implementation(libs.sqlite.bundled)
             implementation(libs.kotlinx.serialization.json)
+
+            implementation(libs.kotlinx.datetime)
 
             api(libs.datastore.preferences)
             api(libs.datastore)

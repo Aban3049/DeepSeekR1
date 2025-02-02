@@ -3,6 +3,7 @@ package com.abanapps.deepseek.r1.di
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import com.abanapps.deepseek.r1.data.local.room.databaseFactory.DatabaseFactory
 import com.abanapps.deepseek.r1.data.utils.Utils
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.darwin.Darwin
@@ -37,6 +38,10 @@ actual val platformModule: Module
                     "${requireNotNull(directory).path}/${Utils.DATA_STORE_FILE_NAME}".toPath()
                 }
             )
+        }
+
+        single {
+            DatabaseFactory()
         }
 
     }

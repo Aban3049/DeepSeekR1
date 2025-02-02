@@ -10,6 +10,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -57,6 +58,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.abanapps.deepseek.r1.data.utils.Utils
 import com.abanapps.deepseek.r1.domain.viewModel.MainViewModel
 import com.abanapps.deepseek.r1.presentation.colors.bgColorDark
@@ -98,6 +100,9 @@ fun App(viewModel: MainViewModel = koinViewModel()) {
 
 @Composable
 fun HomeScreen(viewModel: MainViewModel) {
+
+    val chatsList by viewModel.chatList.collectAsState()
+    val loadAllChats by viewModel.loadAllChats.collectAsStateWithLifecycle()
 
     val darkTheme by viewModel.themePreference.collectAsState()
 
@@ -200,33 +205,62 @@ fun HomeScreen(viewModel: MainViewModel) {
                                 .align(Alignment.CenterHorizontally)
                         )
 
-                        repeat(8) {
-                            Card(
-                                onClick = {},
-                                colors = CardDefaults.cardColors(containerColor = if (darkTheme) darkChatCardColor else Color.White)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
+
+                        LazyColumn {
+
+                            if (chatsList?.isEmpty() == true) {
+                                item {
+                                    Spacer(modifier = Modifier.height(50.dp))
+
                                     Text(
-                                        "Write a programme in C++",
+                                        "No Chat History Found",
                                         fontFamily = customFont(),
                                         modifier = Modifier.padding(6.dp),
                                         color = if (darkTheme) Color.White else Color.Black,
+                                        fontSize = 20.sp
                                     )
-                                    Icon(
-                                        imageVector = Icons.Filled.MoreVert,
-                                        contentDescription = "more",
-                                        modifier = Modifier.padding(6.dp),
-                                        tint = if (darkTheme) Color.White else Color.Black,
-                                    )
+
+                                }
+                            } else {
+                                items(chatsList ?: emptyList()) {
+
+
+                                    Card(
+                                        onClick = {},
+                                        colors = CardDefaults.cardColors(containerColor = if (darkTheme) darkChatCardColor else Color.White)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 8.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+
+                                            Text(
+                                                it.chat.userPrompt,
+                                                fontFamily = customFont(),
+                                                modifier = Modifier.basicMarquee().padding(
+                                                    start = 10.dp,
+                                                    top = 6.dp,
+                                                    bottom = 6.dp,
+                                                    end = 6.dp
+                                                ).weight(1f),
+                                                color = if (darkTheme) Color.White else Color.Black,
+                                            )
+                                            Icon(
+                                                imageVector = Icons.Filled.MoreVert,
+                                                contentDescription = "more",
+                                                modifier = Modifier.padding(6.dp).weight(.3f),
+                                                tint = if (darkTheme) Color.White else Color.Black,
+                                            )
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
                                 }
                             }
-                            Spacer(modifier = Modifier.height(8.dp))
+
+
                         }
                     }
                 }
@@ -432,7 +466,7 @@ fun HomeScreen(viewModel: MainViewModel) {
 
                         isLoading = it.isLoading
 
-                        ChatBubble(chat = it,darkTheme)
+                        ChatBubble(chat = it, darkTheme)
 
                     }
 
@@ -488,7 +522,7 @@ fun HomeScreen(viewModel: MainViewModel) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ChatBubble(chat: ChatMessage,darkTheme:Boolean) {
+fun ChatBubble(chat: ChatMessage, darkTheme: Boolean) {
 
     Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -503,7 +537,7 @@ fun ChatBubble(chat: ChatMessage,darkTheme:Boolean) {
                 text = chat.userPrompt,
                 modifier = Modifier
                     .background(
-                       if (darkTheme) darkChatCardColor else  Color.LightGray.copy(alpha = 0.4f),
+                        if (darkTheme) darkChatCardColor else Color.LightGray.copy(alpha = 0.4f),
                         shape = RoundedCornerShape(8.dp)
                     )
                     .padding(8.dp),
